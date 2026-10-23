@@ -80,6 +80,7 @@ docker run -d -p 3000:3000 \
   skool-mcp
 ```
 The server will now accept SSE connections at `http://localhost:3000/sse` and handle messages via POST at `http://localhost:3000/message`.
+You can check if the server is healthy by visiting the healthcheck endpoint: `http://localhost:3000/health`.
 
 ### 4. Configure Claude Code
 

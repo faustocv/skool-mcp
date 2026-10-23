@@ -135,6 +135,11 @@ async function main() {
     const app = express.default();
     app.use(express.json());
 
+    // Healthcheck endpoint
+    app.get("/health", (req, res) => {
+      res.json({ status: "ok", version: "0.1.0" });
+    });
+
     const transports = new Map<string, typeof SSEServerTransport.prototype>();
 
     app.get("/sse", async (req, res) => {
