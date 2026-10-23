@@ -46,7 +46,7 @@ You can run this MCP server via Docker.
 docker build -t skool-mcp .
 ```
 
-To configure via Claude Desktop (`claude_desktop_config.json`):
+**Running via stdio (for Claude Desktop):**
 
 ```json
 {
@@ -67,6 +67,19 @@ To configure via Claude Desktop (`claude_desktop_config.json`):
   }
 }
 ```
+
+**Running via HTTP (SSE):**
+
+To expose the server over HTTP instead of stdio, provide the `PORT` environment variable:
+
+```bash
+docker run -d -p 3000:3000 \
+  -e PORT=3000 \
+  -e SKOOL_COOKIES="auth_token=YOUR_JWT_HERE" \
+  -e SKOOL_DEFAULT_COMMUNITY="your-community" \
+  skool-mcp
+```
+The server will now accept SSE connections at `http://localhost:3000/sse` and handle messages via POST at `http://localhost:3000/message`.
 
 ### 4. Configure Claude Code
 

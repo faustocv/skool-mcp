@@ -33,5 +33,9 @@ COPY --from=builder /app/dist ./dist
 # Set production environment
 ENV NODE_ENV=production
 
-# The MCP server communicates over stdio
+# Expose port (if run in HTTP mode)
+EXPOSE 3000
+
+# The MCP server communicates over stdio by default.
+# To run over HTTP, set the PORT environment variable.
 ENTRYPOINT ["node", "dist/index.js"]
