@@ -68,7 +68,7 @@ docker build -t skool-mcp .
 }
 ```
 
-**Running via HTTP (SSE):**
+**Running via HTTP (Streamable HTTP):**
 
 To expose the server over HTTP instead of stdio, provide the `PORT` environment variable:
 
@@ -79,7 +79,7 @@ docker run -d -p 3000:3000 \
   -e SKOOL_DEFAULT_COMMUNITY="your-community" \
   skool-mcp
 ```
-The server will now accept SSE connections at `http://localhost:3000/sse` and handle messages via POST at `http://localhost:3000/message`.
+The server is fully compatible with the modern **Streamable HTTP** MCP transport protocol. It will accept connections on `http://localhost:3000/sse` (and `http://localhost:3000/mcp` as an alias).
 You can check if the server is healthy by visiting the healthcheck endpoint: `http://localhost:3000/health`.
 
 ### 4. Configure Claude Code
