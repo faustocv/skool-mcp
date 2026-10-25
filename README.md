@@ -18,6 +18,14 @@ npm run build
 
 ### 2. Configure Skool Auth
 
+You can configure the server using either a JSON file or environment variables.
+
+**Option A: Environment Variables (Recommended for Docker)**
+- `SKOOL_COOKIES`: Your Skool session cookies (`auth_token=YOUR_JWT_HERE`)
+- `SKOOL_DEFAULT_COMMUNITY`: Default community handle (e.g. `ai-agent-academy-6994`)
+- `SKOOL_BASE_URL`: (Optional) Base URL, defaults to `https://www.skool.com`
+
+**Option B: Config File**
 Create `~/.config/skool-mcp/config.json`:
 
 ```json
@@ -30,7 +38,51 @@ Create `~/.config/skool-mcp/config.json`:
 
 **Getting cookies:** Open Skool in Chrome → DevTools → Application → Cookies → copy the `auth_token` value. The `cookies` field should be: `auth_token=YOUR_JWT_HERE`
 
-### 3. Configure Claude Code
+### 3. Docker (Optional but recommended)
+
+You can run this MCP server via Docker.
+
+```bash
+docker build -t skool-mcp .
+```
+
+**Running via stdio (for Claude Desktop):**
+
+```json
+{
+  "mcpServers": {
+    "skool": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "SKOOL_COOKIES=auth_token=...",
+        "-e",
+        "SKOOL_DEFAULT_COMMUNITY=your-community",
+        "skool-mcp"
+      ]
+    }
+  }
+}
+```
+
+**Running via HTTP (SSE):**
+
+To expose the server over HTTP instead of stdio, provide the `PORT` environment variable:
+
+```bash
+docker run -d -p 3000:3000 \
+  -e PORT=3000 \
+  -e SKOOL_COOKIES="auth_token=YOUR_JWT_HERE" \
+  -e SKOOL_DEFAULT_COMMUNITY="your-community" \
+  skool-mcp
+```
+The server will now accept SSE connections at `http://localhost:3000/sse` and handle messages via POST at `http://localhost:3000/message`.
+You can check if the server is healthy by visiting the healthcheck endpoint: `http://localhost:3000/health`.
+
+### 4. Configure Claude Code
 
 Add to your `.mcp.json` (in your project root or `~/.claude/.mcp.json` for global):
 
@@ -39,8 +91,11 @@ Add to your `.mcp.json` (in your project root or `~/.claude/.mcp.json` for globa
   "mcpServers": {
     "skool": {
       "command": "node",
-      "args": ["/mnt/c/projects/skool-mcp/dist/index.js"],
-      "env": {}
+      "args": ["/path/to/skool-mcp/dist/index.js"],
+      "env": {
+        "SKOOL_COOKIES": "auth_token=...",
+        "SKOOL_DEFAULT_COMMUNITY": "your-community"
+      }
     }
   }
 }
