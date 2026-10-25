@@ -130,7 +130,11 @@ async function main() {
 
   if (isHttp) {
     const express = await import("express");
-    const { SSEServerTransport } = await import("@modelcontextprotocol/sdk/server/sse.js");
+    const { StreamableHTTPServerTransport } = await import("@modelcontextprotocol/sdk/server/streamableHttp.js");
+    const { randomUUID } = await import("node:crypto");
+    
+    // We need to determine if a message is an initialization request
+    const { isInitializeRequest } = await import("@modelcontextprotocol/sdk/types.js");
 
     const app = express.default();
     app.use(express.json());
@@ -140,35 +144,87 @@ async function main() {
       res.json({ status: "ok", version: "0.1.0" });
     });
 
-    const transports = new Map<string, typeof SSEServerTransport.prototype>();
+    const transports = new Map<string, typeof StreamableHTTPServerTransport.prototype>();
 
-    app.get("/sse", async (req, res) => {
-      const transport = new SSEServerTransport("/message", res);
+    // Main MCP endpoint handler for POST (initialization and messages)
+    const mcpPostHandler = async (req: any, res: any) => {
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
-      const server = setupServer();
-      await server.connect(transport);
+      try {
+        let transport: typeof StreamableHTTPServerTransport.prototype;
 
-      transports.set(transport.sessionId, transport);
+        if (sessionId && transports.has(sessionId)) {
+          // Existing session
+          transport = transports.get(sessionId)!;
+        } else if (!sessionId && isInitializeRequest(req.body)) {
+          // New initialization
+          transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (newSessionId: string) => {
+              transports.set(newSessionId, transport);
+            },
+          });
 
-      res.on("close", () => {
-        transports.delete(transport.sessionId);
-        transport.close().catch(console.error);
-      });
-    });
+          transport.onclose = () => {
+            const sid = transport.sessionId;
+            if (sid && transports.has(sid)) {
+              transports.delete(sid);
+            }
+          };
 
-    app.post("/message", async (req, res) => {
-      const sessionId = req.query.sessionId as string;
-      const transport = transports.get(sessionId);
-      if (!transport) {
-        res.status(404).send("Session not found");
+          const server = setupServer();
+          await server.connect(transport);
+
+          await transport.handleRequest(req, res, req.body);
+          return;
+        } else {
+          // Bad request
+          res.status(400).json({
+            jsonrpc: "2.0",
+            error: { code: -32000, message: "Bad Request: Invalid session" },
+            id: null,
+          });
+          return;
+        }
+
+        // Handle existing session
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        console.error("Error handling MCP request:", error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: "2.0",
+            error: { code: -32603, message: "Internal server error" },
+            id: null,
+          });
+        }
+      }
+    };
+
+    app.post("/sse", mcpPostHandler);
+    app.post("/mcp", mcpPostHandler); // Also support /mcp alias
+
+    // Main MCP endpoint handler for GET (SSE stream)
+    const mcpGetHandler = async (req: any, res: any) => {
+      // In some clients, the session ID might be passed as a query param or they might expect SSEServerTransport behavior.
+      // We will extract from header first, then query param for fallback
+      const sessionId = (req.headers["mcp-session-id"] as string) || (req.query.sessionId as string);
+      
+      if (!sessionId || !transports.has(sessionId)) {
+        res.status(400).send("Invalid or missing session ID");
         return;
       }
-      await transport.handlePostMessage(req, res, req.body);
-    });
+
+      const transport = transports.get(sessionId)!;
+      await transport.handleRequest(req, res);
+    };
+
+    app.get("/sse", mcpGetHandler);
+    app.get("/mcp", mcpGetHandler); // Also support /mcp alias
 
     const port = parseInt(process.env.PORT || "3000", 10);
     app.listen(port, () => {
-      console.log(`Skool MCP server running on HTTP at http://localhost:${port}/sse`);
+      console.log(`Skool MCP server running on HTTP at http://localhost:${port}/sse (Streamable HTTP)`);
     });
   } else {
     const server = setupServer();
