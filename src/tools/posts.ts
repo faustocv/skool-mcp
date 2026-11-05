@@ -119,3 +119,36 @@ export const postsCommentTool = {
     return JSON.stringify(result, null, 2);
   },
 };
+
+export const postsUpdateTool = {
+  name: "skool_posts_update",
+  description:
+    "Update an existing post. Requires auth cookies. Posts to api2.skool.com.",
+  inputSchema: {
+    postId: z.string().describe("The post UUID to update"),
+    title: z.string().describe("Post title"),
+    content: z.string().describe("Post body content"),
+    attachments: z.string().optional().describe("Comma separated attachment UUIDs"),
+    labels: z.string().optional().describe("Comma separated category label UUIDs"),
+    videoLinks: z.string().optional().describe("Video links"),
+    videoIds: z.array(z.string()).optional().describe("Video IDs"),
+  },
+  async handler(args: { postId: string; title: string; content: string; attachments?: string; labels?: string; videoLinks?: string; videoIds?: string[] }) {
+    const body: Record<string, unknown> = {
+      title: args.title,
+      content: args.content,
+    };
+    
+    if (args.attachments !== undefined) body.attachments = args.attachments;
+    if (args.labels !== undefined) body.labels = args.labels;
+    if (args.videoLinks !== undefined) body.video_links = args.videoLinks;
+    if (args.videoIds !== undefined) body.video_ids = args.videoIds;
+
+    const result = await api2Request(`/posts/${args.postId}/update`, {
+      method: "POST",
+      body,
+    });
+
+    return JSON.stringify(result, null, 2);
+  },
+};
