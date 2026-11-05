@@ -105,10 +105,12 @@ export const postsCommentTool = {
     content: z.string().describe("Comment text content"),
   },
   async handler(args: { postId: string; groupId: string; content: string }) {
-    const result = await api2Request("/comments", {
+    const result = await api2Request("/posts?notify=false&follow=true", {
       method: "POST",
       body: {
-        post_id: args.postId,
+        post_type: "comment",
+        parent_id: args.postId,
+        root_id: args.postId,
         group_id: args.groupId,
         metadata: {
           content: args.content,
