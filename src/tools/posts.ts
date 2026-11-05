@@ -152,3 +152,33 @@ export const postsUpdateTool = {
     return JSON.stringify(result, null, 2);
   },
 };
+
+export const commentsUpdateTool = {
+  name: "skool_comments_update",
+  description:
+    "Update an existing comment on a post. Requires auth cookies. Skool treats comments as posts internally for updates, so this posts to api2.skool.com.",
+  inputSchema: {
+    commentId: z.string().describe("The comment UUID to update (not the post ID)"),
+    content: z.string().describe("Comment text content"),
+    attachments: z.string().optional().describe("Comma separated attachment UUIDs"),
+    videoLinks: z.string().optional().describe("Video links"),
+    videoIds: z.array(z.string()).optional().describe("Video IDs"),
+  },
+  async handler(args: { commentId: string; content: string; attachments?: string; videoLinks?: string; videoIds?: string[] }) {
+    const body: Record<string, unknown> = {
+      title: "",
+      content: args.content,
+    };
+    
+    if (args.attachments !== undefined) body.attachments = args.attachments;
+    if (args.videoLinks !== undefined) body.video_links = args.videoLinks;
+    if (args.videoIds !== undefined) body.video_ids = args.videoIds;
+
+    const result = await api2Request(`/posts/${args.commentId}/update`, {
+      method: "POST",
+      body,
+    });
+
+    return JSON.stringify(result, null, 2);
+  },
+};
