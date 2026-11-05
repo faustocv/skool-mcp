@@ -6,7 +6,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { requestTool } from "./tools/request.js";
 import { communityInfoTool, communityLabelsTool } from "./tools/community.js";
 import { membersListTool, membersPendingTool, membersApproveTool, membersRejectTool } from "./tools/members.js";
-import { postsListTool, postsGetTool, postsCreateTool, postsCommentTool, postsUpdateTool, commentsUpdateTool } from "./tools/posts.js";
+import { postsListTool, postsGetTool, postsCreateTool, postsCommentTool, postsUpdateTool, commentsUpdateTool, commentsGetTool } from "./tools/posts.js";
 import { coursesListTool, lessonsListTool } from "./tools/classroom.js";
 import { notificationsTool } from "./tools/notifications.js";
 
@@ -110,6 +110,13 @@ function setupServer() {
     commentsUpdateTool.description,
     commentsUpdateTool.inputSchema,
     async (args) => ({ content: [{ type: "text", text: await commentsUpdateTool.handler(args) }] }),
+  );
+
+  server.tool(
+    commentsGetTool.name,
+    commentsGetTool.description,
+    commentsGetTool.inputSchema,
+    async (args) => ({ content: [{ type: "text", text: await commentsGetTool.handler(args) }] }),
   );
 
   // Classroom

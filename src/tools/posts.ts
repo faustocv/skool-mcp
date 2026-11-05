@@ -155,10 +155,26 @@ export const postsUpdateTool = {
   },
 };
 
+export const commentsGetTool = {
+  name: "skool_comments_get",
+  description:
+    "Get the content of a single comment. Requires the full comment UUID. Skool treats comments as posts internally, so this fetches from api2.skool.com.",
+  inputSchema: {
+    commentId: z.string().describe("The comment UUID to fetch"),
+  },
+  async handler(args: { commentId: string }) {
+    const result = await api2Request(`/posts/${args.commentId}`, {
+      method: "GET",
+    });
+
+    return JSON.stringify(result, null, 2);
+  },
+};
+
 export const commentsUpdateTool = {
   name: "skool_comments_update",
   description:
-    "Update an existing comment on a post. Requires auth cookies. Skool treats comments as posts internally for updates, so this posts to api2.skool.com.",
+    "Edit/Update an existing comment on a post. Use this when asked to edit a comment. Requires auth cookies. You must provide the comment UUID and the new content.",
   inputSchema: {
     commentId: z.string().describe("The comment UUID to update (not the post ID)"),
     content: z.string().describe("Comment text content"),
