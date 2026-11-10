@@ -38,7 +38,25 @@ Create `~/.config/skool-mcp/config.json`:
 
 **Getting cookies:** Open Skool in Chrome → DevTools → Application → Cookies → copy the `auth_token` value. The `cookies` field should be: `auth_token=YOUR_JWT_HERE`
 
-### 3. Docker (Optional but recommended)
+### 3. Deployment
+
+**Option A: Cloudflare Workers (Recommended for highly available server)**
+
+This server has been adapted to run on Cloudflare Workers utilizing the Cloudflare `agents` SDK for MCP handling.
+
+1. Ensure your `wrangler.toml` is configured properly.
+2. Provide your secrets using Wrangler:
+   ```bash
+   npx wrangler secret put SKOOL_COOKIES
+   npx wrangler secret put SKOOL_DEFAULT_COMMUNITY
+   ```
+3. Deploy to Cloudflare:
+   ```bash
+   npm run deploy
+   ```
+   *Your deployed server will handle MCP requests over HTTP (Streamable HTTP).*
+
+**Option B: Docker (Local/Self-hosted)**
 
 You can run this MCP server via Docker.
 
