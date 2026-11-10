@@ -11,7 +11,7 @@ import { coursesListTool, lessonsListTool } from "./tools/classroom.js";
 import { notificationsTool } from "./tools/notifications.js";
 
 // Start the server
-function setupServer() {
+export function setupServer() {
   const server = new McpServer({
     name: "skool-mcp",
     version: "0.1.0",
