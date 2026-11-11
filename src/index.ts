@@ -11,7 +11,7 @@ import { coursesListTool, lessonsListTool } from "./tools/classroom.js";
 import { notificationsTool } from "./tools/notifications.js";
 
 // Start the server
-function setupServer() {
+export function setupServer() {
   const server = new McpServer({
     name: "skool-mcp",
     version: "0.1.0",
@@ -265,7 +265,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+// Only run main if executed in a Node.js environment (has process.argv)
+const isCloudflare = typeof (globalThis as any).caches !== "undefined" && typeof (globalThis as any).WebSocketPair !== "undefined";
+if (!isCloudflare && typeof process !== "undefined" && process.argv) {
+  main().catch((err) => {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  });
+}
