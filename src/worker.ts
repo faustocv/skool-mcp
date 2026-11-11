@@ -9,6 +9,6 @@ export default {
     }
     Object.assign(process.env, env);
 
-    return createMcpHandler(() => setupServer())(request, env, ctx);
+    return createMcpHandler(() => setupServer() as any)(request, env, ctx);
   }
 };
