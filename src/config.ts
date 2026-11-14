@@ -30,16 +30,23 @@ export async function loadConfig(env?: any): Promise<SkoolConfig> {
 
   // Fallback to global process.env or injected env
   const globalEnv = (typeof process !== "undefined" ? process.env : env) || {};
+  const cfEnv = (globalThis as any).CF_ENV || {};
   
-  let cookies = globalEnv.SKOOL_COOKIES ?? parsed.cookies ?? "";
+  let cookies = env?.SKOOL_COOKIES ?? cfEnv.SKOOL_COOKIES ?? globalEnv.SKOOL_COOKIES ?? parsed.cookies ?? "";
   
-  // Defensive normalization if Vault injected with colon/quotes instead of equals
-  if (cookies.startsWith('auth_token:"') && cookies.endsWith('"')) {
-    cookies = cookies.replace('auth_token:"', 'auth_token=').slice(0, -1);
+  // Defensive normalization if injected with colon instead of equals
+  if (cookies.startsWith('auth_token:')) {
+    cookies = cookies.replace('auth_token:', 'auth_token=');
+  }
+  if (cookies.startsWith('auth_token="') && cookies.endsWith('"')) {
+    cookies = cookies.replace('auth_token="', 'auth_token=').slice(0, -1);
+  }
+  if (cookies.startsWith('auth_token=') && cookies.endsWith('"')) {
+    cookies = cookies.slice(0, -1);
   }
 
-  const defaultCommunity = globalEnv.SKOOL_DEFAULT_COMMUNITY ?? parsed.defaultCommunity ?? "";
-  const baseUrl = globalEnv.SKOOL_BASE_URL ?? parsed.baseUrl ?? "https://www.skool.com";
+  const defaultCommunity = env?.SKOOL_DEFAULT_COMMUNITY ?? cfEnv.SKOOL_DEFAULT_COMMUNITY ?? globalEnv.SKOOL_DEFAULT_COMMUNITY ?? parsed.defaultCommunity ?? "";
+  const baseUrl = env?.SKOOL_BASE_URL ?? cfEnv.SKOOL_BASE_URL ?? globalEnv.SKOOL_BASE_URL ?? parsed.baseUrl ?? "https://www.skool.com";
 
   if (!cookies) {
     throw new Error("Skool cookies not provided. Set SKOOL_COOKIES env var or add it to config.json.");

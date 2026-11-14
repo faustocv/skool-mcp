@@ -8,7 +8,7 @@ export const requestTool = {
   inputSchema: {
     url: z.string().describe("Full URL to request (e.g. https://www.skool.com/some/path or https://api2.skool.com/endpoint)"),
     method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]).default("GET").describe("HTTP method"),
-    headers: z.record(z.string()).optional().describe("Additional headers as key-value pairs"),
+    headers: z.record(z.string(), z.string()).optional().describe("Additional headers as key-value pairs"),
     body: z.string().optional().describe("Request body (for POST/PUT/PATCH)"),
   },
   async handler(args: { url: string; method: string; headers?: Record<string, string>; body?: string }) {
