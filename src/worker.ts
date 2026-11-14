@@ -1,4 +1,5 @@
 import { setupServer } from "./index.js";
+import { configContext } from "./config.js";
 import { createMcpHandler } from "agents/mcp/server";
 
 export default {
@@ -16,6 +17,22 @@ export default {
       // Ignore if read-only
     }
 
-    return createMcpHandler(() => setupServer() as any)(request, env, ctx);
+    const url = new URL(request.url);
+    if (url.pathname === "/health") {
+      return new Response(JSON.stringify({ status: "ok", version: "0.1.0" }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return new Response("Unauthorized: Missing Authorization header", { status: 401 });
+    }
+
+    const contextConfig = { cookies: authHeader };
+
+    return configContext.run(contextConfig, () => {
+      return createMcpHandler(() => setupServer() as any)(request, env, ctx);
+    });
   }
 };
