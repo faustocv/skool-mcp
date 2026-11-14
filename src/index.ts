@@ -9,6 +9,7 @@ import { membersListTool, membersPendingTool, membersApproveTool, membersRejectT
 import { postsListTool, postsGetTool, postsCreateTool, postsCommentTool, postsUpdateTool, commentsUpdateTool, commentsGetTool } from "./tools/posts.js";
 import { coursesListTool, lessonsListTool } from "./tools/classroom.js";
 import { notificationsTool } from "./tools/notifications.js";
+import { configContext } from "./config.js";
 
 // Start the server
 export function setupServer() {
@@ -169,7 +170,19 @@ async function main() {
 
     // Main MCP endpoint handler for POST (initialization and messages)
     const mcpPostHandler = async (req: any, res: any) => {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        console.error("[POST] Unauthorized: Missing Authorization header");
+        res.status(401).json({
+          jsonrpc: "2.0",
+          error: { code: -32000, message: "Unauthorized: Missing Authorization header" },
+          id: null,
+        });
+        return;
+      }
+
       const sessionId = req.headers["mcp-session-id"] as string | undefined;
+      const contextConfig = { cookies: authHeader };
 
       console.log(`[POST] Request received. Session: ${sessionId || "none"}`);
       console.log(`[POST] Headers:`, req.headers);
@@ -203,7 +216,9 @@ async function main() {
           await server.connect(transport);
           
           console.log(`[POST] Transport connected. Handling request...`);
-          await transport.handleRequest(req, res, req.body);
+          await configContext.run(contextConfig, async () => {
+            await transport.handleRequest(req, res, req.body);
+          });
           return;
         } else {
           console.error(`[POST ERROR] Bad Request. Session ID: ${sessionId}, isInit: ${isInitializeRequest(req.body)}`);
@@ -216,7 +231,9 @@ async function main() {
         }
 
         console.log(`[POST] Handling message on existing transport...`);
-        await transport.handleRequest(req, res, req.body);
+        await configContext.run(contextConfig, async () => {
+          await transport.handleRequest(req, res, req.body);
+        });
       } catch (error) {
         console.error("[POST EXCEPTION] Error handling MCP request:", error);
         if (!res.headersSent) {
@@ -234,7 +251,15 @@ async function main() {
 
     // Main MCP endpoint handler for GET (SSE stream)
     const mcpGetHandler = async (req: any, res: any) => {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        console.error("[GET] Unauthorized: Missing Authorization header");
+        res.status(401).send("Unauthorized: Missing Authorization header");
+        return;
+      }
+
       const sessionId = (req.headers["mcp-session-id"] as string) || (req.query.sessionId as string);
+      const contextConfig = { cookies: authHeader };
       
       console.log(`[GET] Request received. Session: ${sessionId || "none"}`);
       console.log(`[GET] Headers:`, req.headers);
@@ -247,7 +272,9 @@ async function main() {
 
       console.log(`[GET] Establishing SSE stream for session: ${sessionId}`);
       const transport = transports.get(sessionId)!;
-      await transport.handleRequest(req, res);
+      await configContext.run(contextConfig, async () => {
+        await transport.handleRequest(req, res);
+      });
     };
 
     app.get("/sse", mcpGetHandler);
